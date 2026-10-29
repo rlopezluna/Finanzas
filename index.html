@@ -78,6 +78,15 @@ body.auth h1,body.auth .sub,body.auth #hd{display:none}
 .lg .go{width:100%;padding:14px;font-size:16px;border-radius:12px;min-height:48px}
 .lerr{color:var(--bad);font-size:14px;min-height:20px;margin:0 0 10px}
 .lg .foot{color:var(--mut);font-size:12px;margin-top:16px}
+
+.fold{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-top:12px}
+.fold>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::before{content:"▸";color:var(--acc);display:inline-block;transition:transform .2s}
+.fold[open]>summary::before{transform:rotate(90deg)}
+.fold .ft{flex:1;min-width:150px}.fold .fs{font-weight:400;color:var(--mut);font-size:14px}
+.fold .fb{padding:0 16px 16px}
+.fb>.dc{border:0;padding:0;background:transparent;margin-top:0!important}
 </style></head><body><main>
 <div id="hd" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h1>Mis finanzas</h1><button class="btn" id="lo" data-act="logout" style="display:none">Cerrar sesión</button></div><p class="sub">Control del préstamo familiar.</p>
 <div class="tabs"><button data-tab="loan">Préstamo</button><button data-tab="bud">Presupuesto</button></div>
@@ -126,13 +135,9 @@ function stmHtml(){
  h+=`<div class="row" style="margin-top:12px"><input id="xc" placeholder="Tarjeta (NU, BBVA…)"><label>Mes del estado<input id="xm" type="month" value="${t.slice(0,7)}"></label><label>Saldo a pagar<input id="xs" type="number" step="0.01"></label><label>Pago mínimo<input id="xi" type="number" step="0.01"></label><label>Fecha límite<input id="xl" type="date"></label><input id="xn" placeholder="Nota (opcional)"><button class="btn f" data-act="stadd">Agregar estado</button></div></div>`;
  return h}
 const nx30=()=>{const d=new Date();let c=mkD(d.getFullYear(),d.getMonth(),30);if(c<=today())c=mkD(d.getFullYear(),d.getMonth()+1,30);return c};
-function debtsHtml(){
- let h=`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 4px">Compras a meses</h3>`;
- if(!B.debts.length)h+=`<p class="note">¡Terminaste el préstamo! Agrega aquí una compra a meses y llevaré el control de sus pagos.</p>`;
- h+=`<div class="row"><input id="dn" placeholder="Compra"><label>Monto de la compra<input id="dp" type="number" step="0.01"></label><label>Total a pagar<input id="dt" type="number" step="0.01" placeholder="igual al monto"></label><label>Meses<input id="dmo" type="number" min="1" max="60" step="1"></label><label>Mensualidad (opcional)<input id="dmn" type="number" step="0.01" placeholder="se calcula sola"></label><label>Primer pago<input id="dd" type="date" value="${nx30()}"></label><button class="btn f" data-act="dadd">Crear plan</button></div></div>`;
- B.debts.forEach(D=>{
+function debtCard(D){let h='';
   const pd=dpaid(D),rs=r2(D.total-pd),pc=Math.min(100,pd/D.total*100),n=D.pay.filter((p,k)=>stt(p.a,ds(D,k+1),addM(D.start,k))==='Pagado').length;
-  h+=`<div class="card" style="margin-top:12px"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${esc(D.n)}</h3><span class="note" style="margin:0">Compra ${M(D.price)} · Total ${M(D.total)} · ${D.months} pagos</span></div>
+  h+=`<div class="card dc" style="margin-top:12px"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${esc(D.n)}</h3><span class="note" style="margin:0">Compra ${M(D.price)} · Total ${M(D.total)} · ${D.months} pagos</span></div>
   <div class="row"><label>Mensualidad (puedes cambiarla)<input type="number" step="0.01" data-df="mo" data-d="${D.id}" value="${mens(D)}"></label></div>
   <div class="grid" style="margin-top:8px"><div class="card"><small>Pagado</small><b>${M(pd)}</b></div><div class="card"><small>Saldo restante</small><b>${M(rs)}</b></div><div class="card"><small>Pagos completos</small><b>${n} de ${D.months}</b></div></div>
   <div class="bar"><i style="width:${pc}%"></i></div>
@@ -143,14 +148,49 @@ function debtsHtml(){
   <td class="st ${s}">${s}</td>
   <td>${(+p.a)>0?`<button class="btn" data-act="dundo" data-d="${D.id}" data-i="${k}">Deshacer</button>`:`<button class="btn f" data-act="dmark" data-d="${D.id}" data-i="${k}">Marcar pagado</button>`}</td></tr>
   <tr><td></td><td colspan="6"><input class="w" placeholder="Nota o referencia" data-df="n" data-d="${D.id}" data-i="${k}" value="${esc(p.n)}"></td></tr>`});
-  h+=`</table></div><div class="row" style="margin-top:10px">${cfm===D.id?`<span class="note" style="margin:0">¿Eliminar esta compra y sus pagos?</span><button class="btn f" data-act="ddely" data-d="${D.id}">Sí, eliminar</button><button class="btn" data-act="ddeln">Cancelar</button>`:`<button class="btn" data-act="ddel" data-d="${D.id}">Eliminar compra</button>`}</div></div>`});
+  h+=`</table></div><div class="row" style="margin-top:10px">${cfm===D.id?`<span class="note" style="margin:0">¿Eliminar esta compra y sus pagos?</span><button class="btn f" data-act="ddely" data-d="${D.id}">Sí, eliminar</button><button class="btn" data-act="ddeln">Cancelar</button>`:`<button class="btn" data-act="ddel" data-d="${D.id}">Eliminar compra</button>`}</div></div>`;
+ return h}
+function debtForm(){return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Nueva deuda</h3><div class="row"><input id="dn" placeholder="Nombre (ej. Celular)"><label>Monto de la compra<input id="dp" type="number" step="0.01"></label><label>Total a pagar<input id="dt" type="number" step="0.01" placeholder="igual al monto"></label><label>Meses<input id="dmo" type="number" min="1" max="60" step="1"></label><label>Mensualidad (opcional)<input id="dmn" type="number" step="0.01" placeholder="se calcula sola"></label><label>Primer pago<input id="dd" type="date" value="${nx30()}"></label></div><div class="row"><button class="btn f" data-act="dadd">Crear deuda</button><button class="btn" data-act="dcancel">Cancelar</button></div></div>`}
+function foldHtml(id,title,sum,inner,def){return `<details class="fold" data-fid="${id}" ${(openF[id]===undefined?def:openF[id])?'open':''}><summary><span class="ft">${title}</span><span class="fs">${sum}</span></summary><div class="fb">${inner}</div></details>`}
+function loanBody(){
+ const paid=S.pay.reduce((t,p)=>t+(+p.a||0),0),rest=r2(S.total-paid),pct=S.total?Math.min(100,paid/S.total*100):0;
+ const nOk=S.pay.filter((p,i)=>status(i)==='Pagado').length;
+ let h='';
+  h+=`<div class="grid"><div class="card"><small>Pagado</small><b>${M(paid)}</b></div><div class="card"><small>Saldo restante</small><b>${M(rest)}</b></div><div class="card"><small>Pagos completos</small><b>${nOk} de 9</b></div></div>
+  <div class="card"><b>${pct.toFixed(1)}%</b> liquidado<div class="bar"><i style="width:${pct}%"></i></div></div>
+  <div class="card" style="margin-top:12px"><div class="row">
+  <label>Monto del préstamo<input type="number" step="0.01" data-s="total" value="${S.total}"></label>
+  <label>Pago mensual<input type="number" step="0.01" data-s="monthly" value="${S.monthly}"></label>
+  <label>Primer pago (mes)<input type="month" data-s="start" value="${S.start.slice(0,7)}"></label>
+  <label>Día de pago<input type="number" min="1" max="31" step="1" data-s="day" value="${S.day}"></label></div></div>
+  <div class="card wrap" style="margin-top:12px"><table><tr><th>#</th><th>Fecha</th><th>Programado</th><th>Pagado</th><th>Fecha real</th><th>Estatus</th><th></th></tr>`;
+  S.pay.forEach((p,i)=>{const st=status(i);h+=`<tr><td>${i+1}</td><td>${fmtD(due(i+1))}</td><td>${M(sched(i+1))}</td>
+  <td><input type="number" step="0.01" data-f="a" data-i="${i}" value="${p.a||''}"></td>
+  <td><input type="date" data-f="d" data-i="${i}" value="${p.d}"></td>
+  <td class="st ${st}">${st}</td>
+  <td>${(+p.a)>0?`<button class="btn" data-act="undo" data-i="${i}">Deshacer</button>`:`<button class="btn f" data-act="mark" data-i="${i}">Marcar pagado</button>`}</td></tr>
+  <tr><td></td><td colspan="6"><input class="w" placeholder="Nota o referencia de la transferencia" data-f="n" data-i="${i}" value="${esc(p.n)}"></td></tr>`});
+  h+=`</table></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 4px">Resumen para compartir</h3><p class="note" style="margin:0 0 8px">Copia este resumen y mándalo por WhatsApp o correo.</p>
+  <textarea id="sumt" readonly rows="9">${esc(sumText())}</textarea>
+  <div class="row" style="margin-top:8px"><button class="btn f" data-act="copysum">Copiar resumen</button><a class="btn" href="https://wa.me/?text=${encodeURIComponent(sumText())}" target="_blank" rel="noopener">Enviar por WhatsApp</a></div></div>`;
+ return h}
+function loansHtml(){
+ const paid=S.pay.reduce((t,p)=>t+(+p.a||0),0),rest=r2(S.total-paid),nOk=S.pay.filter((p,i)=>status(i)==='Pagado').length;
+ let h=`<div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">Deudas</h3>${can()?'<button class="btn f" data-act="dnew">+ Agregar deuda nueva</button>':''}</div>`;
+ if(can()&&showNew)h+=debtForm();
+ h+=foldHtml('loan','👨‍👩‍👦 Préstamo familiar','Saldo '+M(rest)+' · '+nOk+' de 9 pagos'+(rest<=0.005?' ✓':''),loanBody(),true);
+ if(can()){B.debts.forEach(D=>{const rs=r2(D.total-dpaid(D)),n=D.pay.filter((p,k)=>stt(p.a,ds(D,k+1),addM(D.start,k))==='Pagado').length;
+  h+=foldHtml(D.id,'🛒 '+esc(D.n),'Saldo '+M(rs)+' · '+n+' de '+D.months+' pagos'+(ddone(D)?' ✓':''),debtCard(D),false)});
+  if(!B.debts.length&&!showNew)h+='<p class="note">Aquí aparecerán tus compras a meses y otras deudas. Toca "Agregar deuda nueva" para crear una.</p>'}
  return h}
 
 function decorate(){document.querySelectorAll('table').forEach(t=>{const hs=[...t.querySelectorAll('th')].map(x=>x.textContent);t.querySelectorAll('tr').forEach(r=>{const c=r.children;if(!c.length||c[0].tagName!=='TD')return;if(c.length>=7){[...c].forEach((x,k)=>{if(hs[k])x.setAttribute('data-label',hs[k])});r.classList.add('dr')}else if(c.length===2)r.classList.add('nr')})})}
 function sumText(){const paid=S.pay.reduce((t,p)=>t+(+p.a||0),0),rest=r2(S.total-paid),pc=S.total?(paid/S.total*100).toFixed(1):0;
  let s='Préstamo familiar - resumen al '+fmtD(today())+'\nMonto: '+M(S.total)+'\nPagado: '+M(paid)+'\nSaldo restante: '+M(rest)+' ('+pc+'% liquidado)\n\nPagos:';
  S.pay.forEach((p,i)=>{const st=status(i);s+='\n'+(i+1)+') '+fmtD(due(i+1))+' - '+M(sched(i+1))+' - '+(st==='Pagado'?'Pagado'+(p.d?' el '+fmtD(p.d):''):st==='Parcial'?'Parcial ('+M(p.a)+')':st)});return s}
-let role='',fails=0,lockT=0;
+let role='',fails=0,lockT=0,showNew=false;const openF={};
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.fid)openF[d.dataset.fid]=d.open},true);
 try{role=sessionStorage.getItem('role')||''}catch(e){}
 const USERS={admin:{h:'812ef87598ce1ffdde097ebc024bce3923cb68567488aa7b36deca565a0b3d42',r:'admin'},invitado:{h:'37640f55328ae1422cc65a3cb5a7764f1202d433a0114dfdf0ddbdd25c3605b6',r:'guest'}};
 const can=()=>role==='admin';
@@ -179,26 +219,9 @@ function render(){
  const nOk=S.pay.filter((p,i)=>status(i)==='Pagado').length;
  let h='';
  if(tab==='loan'){
-  h+=`<div class="grid"><div class="card"><small>Pagado</small><b>${M(paid)}</b></div><div class="card"><small>Saldo restante</small><b>${M(rest)}</b></div><div class="card"><small>Pagos completos</small><b>${nOk} de 9</b></div></div>
-  <div class="card"><b>${pct.toFixed(1)}%</b> liquidado<div class="bar"><i style="width:${pct}%"></i></div></div>
-  <div class="card" style="margin-top:12px"><div class="row">
-  <label>Monto del préstamo<input type="number" step="0.01" data-s="total" value="${S.total}"></label>
-  <label>Pago mensual<input type="number" step="0.01" data-s="monthly" value="${S.monthly}"></label>
-  <label>Primer pago (mes)<input type="month" data-s="start" value="${S.start.slice(0,7)}"></label>
-  <label>Día de pago<input type="number" min="1" max="31" step="1" data-s="day" value="${S.day}"></label></div></div>
-  <div class="card wrap" style="margin-top:12px"><table><tr><th>#</th><th>Fecha</th><th>Programado</th><th>Pagado</th><th>Fecha real</th><th>Estatus</th><th></th></tr>`;
-  S.pay.forEach((p,i)=>{const st=status(i);h+=`<tr><td>${i+1}</td><td>${fmtD(due(i+1))}</td><td>${M(sched(i+1))}</td>
-  <td><input type="number" step="0.01" data-f="a" data-i="${i}" value="${p.a||''}"></td>
-  <td><input type="date" data-f="d" data-i="${i}" value="${p.d}"></td>
-  <td class="st ${st}">${st}</td>
-  <td>${(+p.a)>0?`<button class="btn" data-act="undo" data-i="${i}">Deshacer</button>`:`<button class="btn f" data-act="mark" data-i="${i}">Marcar pagado</button>`}</td></tr>
-  <tr><td></td><td colspan="6"><input class="w" placeholder="Nota o referencia de la transferencia" data-f="n" data-i="${i}" value="${esc(p.n)}"></td></tr>`});
-  h+=`</table></div>
-  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 4px">Resumen para compartir</h3><p class="note" style="margin:0 0 8px">Copia este resumen y mándalo por WhatsApp o correo.</p>
-  <textarea id="sumt" readonly rows="9">${esc(sumText())}</textarea>
-  <div class="row" style="margin-top:8px"><button class="btn f" data-act="copysum">Copiar resumen</button><a class="btn" href="https://wa.me/?text=${encodeURIComponent(sumText())}" target="_blank" rel="noopener">Enviar por WhatsApp</a></div></div>`;
+h+=loansHtml();
  }else{
-  const t=today(),ym=t.slice(0,7),ld=loanDone(),dsum=r2(B.debts.filter(D=>!ddone(D)).reduce((s,D)=>s+mens(D),0)),lp=ld?dsum:S.monthly;
+  const t=today(),ym=t.slice(0,7),ld=loanDone(),dsum=r2(B.debts.filter(D=>!ddone(D)).reduce((s,D)=>s+mens(D),0)),lp=r2((ld?0:S.monthly)+dsum),dl=ld?'compras a meses':dsum>0?'el préstamo y compras a meses':'el préstamo';
   const P=curPeriod(),bB=r2(B.amtB-lp),bA=r2(B.amtA-B.sm),bud=k=>k==='A'?bA:bB,gastosM=r2(bA+bB),pre=t<B.gs,budC=pre?0:bud(P.cur.k),budN=pre?bud(curPeriod(B.gs).cur.k):bud(P.next.k);
   const inP=e=>{const d=e.d||t;return d>=P.cur.s&&d<P.next.s};
   const mex=B.exp.map((e,i)=>({e,i})).filter(x=>inP(x.e)),ex=mex.reduce((s,x)=>s+x.e.a,0),left=r2(budC-ex),pg=budC>0?Math.max(0,Math.min(100,left/budC*100)):0;
@@ -211,11 +234,11 @@ function render(){
   <label>Depósito día ${B.dayB}<input type="number" step="0.01" data-b="amtB" value="${B.amtB}"></label>
   <label>Ahorro mensual<input type="number" step="0.01" data-b="sm" value="${B.sm}"></label>
   <label>Inicio del control de gastos<input type="date" data-b="gs" value="${B.gs}"></label>
-  <label>${ld?'Compras a meses':'Préstamo'}<input value="${lp}" disabled></label>
+  <label>${ld?'Compras a meses':dsum>0?'Préstamo + compras':'Préstamo'}<input value="${lp}" disabled></label>
   <label>Gastos del mes<input value="${gastosM}" disabled></label></div>
-  <p class="note" style="margin:0;color:${neg?'var(--bad)':'var(--mut)'}">Ingreso del mes ${M(incomeM)}. Del depósito del día ${B.dayB} se descuenta ${ld?'compras a meses':'el préstamo'} (${M(lp)}) y del día ${B.dayA} el ahorro (${M(B.sm)}). Gastos del 30 al 15: ${M(bB)}. Gastos del 16 al 29: ${M(bA)}. Total del mes: ${M(gastosM)}.${neg?' ¡Ojo: el depósito no alcanza!':''}</p></div>
-  ${ld?debtsHtml():''}<div class="card" style="margin-top:12px"><h3 style="margin:0 0 2px">Gastos de la quincena</h3>
-  <p class="note" style="margin:0 0 8px">${pre?'El control de gastos inicia el '+fmtD(B.gs)+'. Mientras tanto el límite es $0.':'Quincena del '+(P.cur.k==='A'?'16 al 29':'30 al 15')+': '+fmtD(P.cur.s)+' al '+fmtD(endS)+'. Sale del depósito del día '+(P.cur.k==='A'?B.dayA+' menos el ahorro':B.dayB+' menos '+(ld?'compras a meses':'el préstamo'))+'.'}</p>
+  <p class="note" style="margin:0;color:${neg?'var(--bad)':'var(--mut)'}">Ingreso del mes ${M(incomeM)}. Del depósito del día ${B.dayB} se descuenta ${dl} (${M(lp)}) y del día ${B.dayA} el ahorro (${M(B.sm)}). Gastos del 30 al 15: ${M(bB)}. Gastos del 16 al 29: ${M(bA)}. Total del mes: ${M(gastosM)}.${neg?' ¡Ojo: el depósito no alcanza!':''}</p></div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 2px">Gastos de la quincena</h3>
+  <p class="note" style="margin:0 0 8px">${pre?'El control de gastos inicia el '+fmtD(B.gs)+'. Mientras tanto el límite es $0.':'Quincena del '+(P.cur.k==='A'?'16 al 29':'30 al 15')+': '+fmtD(P.cur.s)+' al '+fmtD(endS)+'. Sale del depósito del día '+(P.cur.k==='A'?B.dayA+' menos el ahorro':B.dayB+' menos '+dl)+'.'}</p>
   <b style="font-size:28px;color:${col}">${M(left)}</b> <span class="note">disponibles de ${M(budC)}</span>
   <div class="bar" style="height:20px"><i style="width:${pg}%;background:${col}"></i></div>
   <p class="note" style="margin:0 0 8px">${left<0?'Te pasaste '+M(-left)+' del presupuesto.':'Llevas gastados '+M(ex)+'.'} ${pre?'El '+fmtD(B.gs)+' inicia con ':'El '+fmtD(P.next.s)+' se actualiza con '}${M(budN)}.</p>`;
@@ -235,13 +258,15 @@ function render(){
  }
  $('#app').innerHTML=h;decorate();
  const mg=document.getElementById('msg');if(mg)mg.textContent=err;
- $('#sync').textContent=(ref?(failed?'Nube: con error. ':'Nube: conectada. ')+(owner?'El préstamo se comparte con quien tenga acceso. Presupuesto y ahorro solo los ves tú.':'Los cambios se comparten con quien tenga acceso.'):'Nube: no disponible. Los cambios se guardan solo en este navegador.')+' (v13)';
+ $('#sync').textContent=(ref?(failed?'Nube: con error. ':'Nube: conectada. ')+(owner?'El préstamo se comparte con quien tenga acceso. Presupuesto y ahorro solo los ves tú.':'Los cambios se comparten con quien tenga acceso.'):'Nube: no disponible. Los cambios se guardan solo en este navegador.')+' (v14)';
 }
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-tab],[data-act]');if(!t)return;
  if(t.dataset.tab){tab=t.dataset.tab;render();return}
  const i=+t.dataset.i,a=t.dataset.act;
  if(a==='login'){doLogin();return}
+ if(a==='dnew'){showNew=!showNew;render();return}
+ if(a==='dcancel'){showNew=false;render();return}
  if(a==='eye'){const q=$('#lp');q.type=q.type==='password'?'text':'password';t.textContent=q.type==='password'?'Ver':'Ocultar';return}
  if(a==='logout'){logout();return}
  if(a==='mark'){S.pay[i]={a:sched(i+1),d:today(),n:S.pay[i].n};saveL()}
@@ -253,7 +278,7 @@ document.addEventListener('click',e=>{
   if(!ok&&navigator.clipboard){navigator.clipboard.writeText(ta.value).then(()=>{t.textContent='¡Copiado!'},()=>{t.textContent='Selecciona el texto y cópialo'});return}
   t.textContent=ok?'¡Copiado!':'Selecciona el texto y cópialo'}
  else if(a==='dadd'){const pr=parseFloat($('#dp').value),tt=parseFloat($('#dt').value)||pr,mn=parseFloat($('#dmn').value),st=$('#dd').value;let mo=parseInt($('#dmo').value);if(mn>0&&tt>0)mo=Math.ceil(tt/mn-1e-9);
-  if(pr>0&&mo>=1&&mo<=120&&st){B.debts.push({id:Date.now().toString(36),n:$('#dn').value.trim()||'Compra',price:pr,total:tt,months:mo,mo:mn>0?mn:r2(tt/mo),start:st,pay:Array.from({length:mo},()=>({a:0,d:'',n:''}))});saveB()}}
+  if(pr>0&&mo>=1&&mo<=120&&st){const nid=Date.now().toString(36);openF[nid]=true;showNew=false;B.debts.push({id:nid,n:$('#dn').value.trim()||'Compra',price:pr,total:tt,months:mo,mo:mn>0?mn:r2(tt/mo),start:st,pay:Array.from({length:mo},()=>({a:0,d:'',n:''}))});saveB()}}
  else if(a==='stadd'){const c=$('#xc').value.trim(),sx=$('#xs').value;if(c&&sx!==''){B.stm.push({id:Date.now().toString(36),c,m:$('#xm').value,sal:parseFloat(sx)||0,min:parseFloat($('#xi').value)||0,l:$('#xl').value,n:$('#xn').value.trim(),pd:''});saveB()}}
  else if(a==='stpay'||a==='stundo'||a==='stdel'){const x=B.stm.find(z=>z.id===t.dataset.x);if(x){if(a==='stpay')x.pd=today();else if(a==='stundo')x.pd='';else B.stm=B.stm.filter(z=>z!==x);saveB()}}
  else if(t.dataset.d&&B.debts.some(x=>x.id===t.dataset.d)){const D=B.debts.find(x=>x.id===t.dataset.d);
